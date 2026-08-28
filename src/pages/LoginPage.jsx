@@ -1,26 +1,12 @@
-import { useState } from 'react'
-import { Navigate, useNavigate } from 'react-router'
+import { Navigate } from 'react-router'
+import { FaMicrosoft } from 'react-icons/fa'
 import { useAuth } from '../context/AuthContext'
 
 function LoginPage() {
-  const { user, login } = useAuth()
-  const navigate = useNavigate()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const { user, login, loading, authError } = useAuth()
 
   if (user) {
     return <Navigate to="/panel-inicio" replace />
-  }
-
-  const handleSubmit = (event) => {
-    event.preventDefault()
-    setError('')
-    if (login({ email, password })) {
-      navigate('/panel-inicio', { replace: true })
-    } else {
-      setError('Credenciales incorrectas. Verifica tu correo y contraseña.')
-    }
   }
 
   return (
@@ -33,40 +19,26 @@ function LoginPage() {
               Acceso restringido a Super Administradores y Administradores de Sucursal
             </p>
           </header>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <fieldset className="fieldset">
-              <legend className="fieldset-legend">Correo electrónico</legend>
-              <input
-                type="email"
-                className="input w-full"
-                placeholder="correo@cine.cl"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                autoComplete="email"
-                required
-              />
-            </fieldset>
-            <fieldset className="fieldset">
-              <legend className="fieldset-legend">Contraseña</legend>
-              <input
-                type="password"
-                className="input w-full"
-                placeholder="••••••••"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                autoComplete="current-password"
-                required
-              />
-            </fieldset>
-            {error && (
-              <div role="alert" className="alert alert-error alert-soft text-sm">
-                <span>{error}</span>
-              </div>
-            )}
-            <button type="submit" className="btn btn-primary w-full">
-              Iniciar sesión
+          {authError && (
+            <div role="alert" className="alert alert-error alert-soft text-sm">
+              <span>{authError}</span>
+            </div>
+          )}
+          <div className="space-y-3">
+            <button
+              type="button"
+              className="btn btn-primary w-full gap-2"
+              onClick={login}
+              disabled={loading}
+            >
+              {loading && <span className="loading loading-spinner loading-sm" />}
+              <FaMicrosoft className="size-4" />
+              Iniciar sesión con Microsoft
             </button>
-          </form>
+            <p className="text-center text-xs text-base-content/50">
+              Inicia sesión con tu cuenta institucional de Microsoft (Entra ID)
+            </p>
+          </div>
         </div>
       </section>
     </main>

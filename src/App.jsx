@@ -1,14 +1,18 @@
+import { MsalProvider } from '@azure/msal-react'
 import { BrowserRouter } from 'react-router'
 import AppRoutes from './routes/AppRoutes'
 import { AuthProvider } from './context/AuthContext'
+import { msalInstance } from './auth/msalConfig'
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
-    </AuthProvider>
+    <MsalProvider instance={msalInstance}>
+      <AuthProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </AuthProvider>
+    </MsalProvider>
   )
 }
 

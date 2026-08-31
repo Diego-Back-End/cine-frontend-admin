@@ -1,9 +1,18 @@
 import { PublicClientApplication } from '@azure/msal-browser'
 
+const clientId = import.meta.env.VITE_AZURE_CLIENT_ID ?? ''
+const tenantId = import.meta.env.VITE_AZURE_AUTHORITY ?? ''
+
+export const isAuthConfigured =
+  Boolean(clientId) &&
+  Boolean(tenantId) &&
+  !clientId.startsWith('REEMPLAZAR') &&
+  !tenantId.startsWith('REEMPLAZAR')
+
 const msalConfig = {
   auth: {
-    clientId: import.meta.env.VITE_AZURE_CLIENT_ID ?? '',
-    authority: import.meta.env.VITE_AZURE_AUTHORITY,
+    clientId,
+    authority: `https://login.microsoftonline.com/${tenantId}`,
     redirectUri: import.meta.env.VITE_AZURE_REDIRECT_URI ?? window.location.origin,
     postLogoutRedirectUri: window.location.origin,
   },
@@ -17,4 +26,8 @@ export const loginRequest = {
   scopes: [import.meta.env.VITE_AZURE_SCOPE ?? 'User.Read'],
 }
 
-export const msalInstance = new PublicClientApplication(msalConfig)
+export async function initializeMsal() {
+  const instance = new PublicClientApplication(msalConfig)
+  await instance.initialize()
+  return instance
+}

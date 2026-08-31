@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo } from 'react'
 import { InteractionStatus } from '@azure/msal-browser'
 import { useMsal } from '@azure/msal-react'
 import { loginRequest } from '../auth/msalConfig'
@@ -15,6 +15,12 @@ export const ROLE_LABELS = {
 
 const SESSION_KEY = 'cine-admin-session'
 
+function isDevMode() {
+  const superAdminId = import.meta.env.VITE_SUPER_ADMIN_ROLE_ID
+  const branchAdminId = import.meta.env.VITE_BRANCH_ADMIN_ROLE_ID
+  return !superAdminId && !branchAdminId
+}
+
 function resolveRole(claims) {
   const superAdminId = import.meta.env.VITE_SUPER_ADMIN_ROLE_ID
   const branchAdminId = import.meta.env.VITE_BRANCH_ADMIN_ROLE_ID
@@ -30,19 +36,10 @@ function resolveEmail(claims, account) {
 
 function mapAccountToUser(account) {
   const claims = account.idTokenClaims ?? {}
-  const role = resolveRole(claims)
+  const role = isDevMode() ? ROLES.SUPER_ADMIN : resolveRole(claims)
   const email = resolveEmail(claims, account)
   if (!role || !email) return null
   return { email, role }
-}
-
-function readStoredUser() {
-  try {
-    const stored = window.localStorage.getItem(SESSION_KEY)
-    return stored ? JSON.parse(stored) : null
-  } catch {
-    return null
-  }
 }
 
 function removeStoredUser() {
@@ -64,64 +61,51 @@ function storeUser(user) {
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const { instance, inProgress } = useMsal()
-  const [user, setUser] = useState(readStoredUser)
-  const [loading, setLoading] = useState(true)
-  const [authError, setAuthError] = useState('')
+  const { instance, accounts, inProgress } = useMsal()
+
+  const account = instance.getActiveAccount() ?? accounts[0] ?? null
+
+  const user = useMemo(() => {
+    if (!account) {
+      removeStoredUser()
+      return null
+    }
+    const mappedUser = mapAccountToUser(account)
+    if (!mappedUser) {
+      removeStoredUser()
+      return null
+    }
+    storeUser(mappedUser)
+    return mappedUser
+  }, [account])
+
+  const authError = useMemo(() => {
+    if (!account) return ''
+    if (!user) {
+      return 'Tu cuenta no tiene un rol asignado en este panel. Contacta al administrador.'
+    }
+    return ''
+  }, [account, user])
+
+  const loading = useMemo(
+    () =>
+      inProgress === InteractionStatus.Login ||
+      inProgress === InteractionStatus.AcquireToken ||
+      inProgress === InteractionStatus.HandleRedirect,
+    [inProgress],
+  )
 
   useEffect(() => {
-    let mounted = true
-    instance
-      .handleRedirectPromise()
-      .then(() => {
-        if (!mounted) return
-        const account = instance.getActiveAccount() ?? instance.getAllAccounts()[0]
-
-        if (!account) {
-          setUser(null)
-          removeStoredUser()
-          setLoading(false)
-          return
-        }
-
-        instance.setActiveAccount(account)
-
-        const mappedUser = mapAccountToUser(account)
-        if (!mappedUser) {
-          setUser(null)
-          removeStoredUser()
-          setAuthError(
-            'Tu cuenta no tiene un rol asignado en este panel. Contacta al administrador.',
-          )
-          setLoading(false)
-          return
-        }
-
-        setUser(mappedUser)
-        storeUser(mappedUser)
-        setAuthError('')
-        setLoading(false)
-      })
-      .catch((error) => {
-        console.error('[Auth] Error al procesar el redirect:', error)
-        setAuthError('No se pudo completar la autenticación. Inténtalo nuevamente.')
-        setLoading(false)
-      })
-
-    return () => {
-      mounted = false
+    if (account && inProgress === InteractionStatus.None) {
+      instance.setActiveAccount(account)
     }
-  }, [instance])
+  }, [account, instance, inProgress])
 
   const login = useCallback(() => {
-    setAuthError('')
     instance.loginRedirect(loginRequest)
   }, [instance])
 
   const logout = useCallback(() => {
-    setUser(null)
-    setAuthError('')
-    removeStoredUser()
     instance.logoutRedirect()
   }, [instance])
 
@@ -130,10 +114,10 @@ export function AuthProvider({ children }) {
       user,
       login,
       logout,
-      loading: inProgress === InteractionStatus.Login || inProgress === InteractionStatus.AcquireToken || loading,
+      loading,
       authError,
     }),
-    [user, login, logout, loading, authError, inProgress],
+    [user, login, logout, loading, authError],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

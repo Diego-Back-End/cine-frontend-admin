@@ -1,13 +1,16 @@
 import { BrowserRouter } from 'react-router'
 import AppRoutes from './routes/AppRoutes'
 import { AuthProvider } from './context/AuthContext'
+import { CatalogMetaProvider } from './context/CatalogMetaContext'
 
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
+      <CatalogMetaProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </CatalogMetaProvider>
     </AuthProvider>
   )
 }

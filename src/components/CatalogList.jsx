@@ -25,8 +25,9 @@ function CatalogList({ title, description, entityLabel, entityType, items, onAdd
 
   const requiredPhrase = pendingName ? `CREAR ${entityType} ${pendingName}` : ''
 
-  const handleConfirm = () => {
-    const ok = onAdd?.(pendingName)
+  const handleConfirm = async () => {
+    const result = onAdd?.(pendingName)
+    const ok = result instanceof Promise ? await result : result
     if (ok) {
       setInputValue('')
       setPendingName('')

@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import Layout from '../components/Layout'
 import { getPeliculaBySlug } from '../data/peliculasMock'
+import { catalogoApi } from '../services/catalogoApi'
 
 const DIAS = [
   { key: 'lun', label: 'LUN', date: '12/05' },
@@ -42,8 +43,31 @@ const HORARIOS_PLACEHOLDER = {
 
 function VerPeliculaPage() {
   const { slug } = useParams()
-  const pelicula = getPeliculaBySlug(slug)
+  const [pelicula, setPelicula] = useState(() => getPeliculaBySlug(slug))
   const [diaSeleccionado, setDiaSeleccionado] = useState(DIAS[0].key)
+
+  useEffect(() => {
+    let cancelled = false
+    catalogoApi
+      .getPeliculaBySlug(slug)
+      .then((data) => {
+        if (cancelled) return
+        setPelicula({
+          title: data.titulo ?? data.title,
+          genre: data.genero ?? data.genre ?? (data.generos?.[0] ?? ''),
+          duration: data.duracion ?? data.duration ?? data.duracionMinutos,
+          rating: data.clasificacion ?? data.rating,
+          estado: data.estado,
+          sinopsis: data.sinopsis,
+          poster: data.poster ?? data.imagenUrl,
+          slug: data.slug,
+        })
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [slug])
 
   if (!pelicula) {
     return (

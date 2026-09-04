@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { catalogoApi } from '../services/catalogoApi'
 
 const DEFAULT_GENEROS = [
   'Acción',
@@ -40,6 +41,21 @@ export function CatalogMetaProvider({ children }) {
   )
   const [ciudades, setCiudades] = useState(() => load('cine_ciudades', DEFAULT_CIUDADES))
 
+  // Sincroniza con backend si está disponible (sin Gateway, directo 8081); fallback a localStorage/defaults
+  useEffect(() => {
+    let cancelled = false
+    catalogoApi.getGeneros().then((data) => {
+      if (!cancelled && Array.isArray(data) && data.length > 0) setGeneros(data)
+    }).catch(() => {})
+    catalogoApi.getClasificaciones().then((data) => {
+      if (!cancelled && Array.isArray(data) && data.length > 0) setClasificaciones(data)
+    }).catch(() => {})
+    catalogoApi.getEstados().then((data) => {
+      // estados es estático, no se setea, solo para validar que backend responde
+    }).catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
   useEffect(() => {
     try {
       window.localStorage.setItem('cine_generos', JSON.stringify(generos))
@@ -64,20 +80,33 @@ export function CatalogMetaProvider({ children }) {
     }
   }, [ciudades])
 
-  const addGenero = useCallback((nombre) => {
+  const addGenero = useCallback(async (nombre) => {
     const clean = String(nombre).trim()
     if (!clean) return false
     const exists = generos.some((g) => g.toLowerCase() === clean.toLowerCase())
     if (exists) return false
+    try {
+      await catalogoApi.createGenero(clean)
+    } catch (e) {
+      // si backend no disponible o 409, igual persistir local para MVP sin backend
+      if (!String(e.message).includes('ya existe')) {
+        // fallback local si backend caído
+      } else return false
+    }
     setGeneros((prev) => [...prev, clean])
     return true
   }, [generos])
 
-  const addClasificacion = useCallback((nombre) => {
+  const addClasificacion = useCallback(async (nombre) => {
     const clean = String(nombre).trim()
     if (!clean) return false
     const exists = clasificaciones.some((c) => c.toLowerCase() === clean.toLowerCase())
     if (exists) return false
+    try {
+      await catalogoApi.createClasificacion(clean)
+    } catch (e) {
+      if (String(e.message).includes('ya existe')) return false
+    }
     setClasificaciones((prev) => [...prev, clean])
     return true
   }, [clasificaciones])

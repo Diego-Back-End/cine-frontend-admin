@@ -1,12 +1,25 @@
 import { Link, useNavigate } from 'react-router'
 import Layout from '../components/Layout'
 import PeliculaForm from '../components/PeliculaForm'
+import { catalogoApi } from '../services/catalogoApi'
 
 function CrearPeliculaPage() {
   const navigate = useNavigate()
 
-  const handleSubmit = (payload) => {
-    console.log('Guardar película (pendiente gateway POST /peliculas):', payload)
+  const handleSubmit = async (payload) => {
+    try {
+      await catalogoApi.createPelicula({
+        titulo: payload.titulo,
+        sinopsis: payload.sinopsis,
+        duracion: payload.duracion,
+        genero: payload.genero,
+        clasificacion: payload.clasificacion,
+        estado: payload.estado,
+        poster: payload.poster,
+      })
+    } catch (e) {
+      console.error('POST backend falló, fallback mock', e)
+    }
     navigate('/panel-inicio/peliculas')
   }
 

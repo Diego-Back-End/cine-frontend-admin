@@ -1,12 +1,43 @@
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import Layout from '../components/Layout'
 import PeliculaForm from '../components/PeliculaForm'
 import { getPeliculaById } from '../data/peliculasMock'
+import { catalogoApi } from '../services/catalogoApi'
 
 function EditarPeliculaPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const pelicula = getPeliculaById(id)
+  const [pelicula, setPelicula] = useState(() => getPeliculaById(id))
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    catalogoApi
+      .getPeliculaById(id)
+      .then((data) => {
+        if (cancelled) return
+        const mapped = {
+          id: data.id,
+          title: data.titulo ?? data.title,
+          genre: data.genero ?? data.genre ?? (data.generos?.[0] ?? ''),
+          duration: data.duracion ?? data.duration ?? data.duracionMinutos,
+          rating: data.clasificacion ?? data.rating,
+          estado: data.estado,
+          sinopsis: data.sinopsis,
+          poster: data.poster ?? data.imagenUrl,
+        }
+        setPelicula(mapped)
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [id])
 
   if (!pelicula) {
     return (
@@ -23,9 +54,31 @@ function EditarPeliculaPage() {
     )
   }
 
-  const handleSubmit = (payload) => {
-    console.log('Actualizar película (pendiente gateway PUT /peliculas/' + id + '):', payload)
+  const handleSubmit = async (payload) => {
+    try {
+      await catalogoApi.updatePelicula(id, {
+        titulo: payload.titulo,
+        sinopsis: payload.sinopsis,
+        duracion: payload.duracion,
+        genero: payload.genero,
+        clasificacion: payload.clasificacion,
+        estado: payload.estado,
+        poster: payload.poster,
+      })
+    } catch (e) {
+      console.error('PUT backend falló, fallback mock', e)
+    }
     navigate('/panel-inicio/peliculas')
+  }
+
+  if (loading && !pelicula) {
+    return (
+      <Layout>
+        <section className="mx-auto max-w-5xl space-y-4">
+          <div className="loading loading-spinner" />
+        </section>
+      </Layout>
+    )
   }
 
   return (

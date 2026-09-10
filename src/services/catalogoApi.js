@@ -1,5 +1,24 @@
 const API_URL = import.meta.env.VITE_CATALOGO_API_URL || 'http://localhost:8081/api'
 
+// Inyectado desde AuthContext para desacoplar MSAL del servicio.
+// Debe setearse en App.jsx / main.jsx una vez. Fallback: intenta leer token desde helper global.
+let _getAccessToken = null
+
+export function setCatalogoAuthProvider(fn) {
+  _getAccessToken = fn
+}
+
+async function getAuthHeaders() {
+  if (!_getAccessToken) return {}
+  try {
+    const token = await _getAccessToken()
+    if (!token) return {}
+    return { Authorization: `Bearer ${token}` }
+  } catch {
+    return {}
+  }
+}
+
 async function handleResponse(res) {
   if (!res.ok) {
     const text = await res.text()
@@ -37,23 +56,26 @@ export const catalogoApi = {
     return handleResponse(res)
   },
   createPelicula: async (payload) => {
+    const auth = await getAuthHeaders()
     const res = await fetch(`${API_URL}/peliculas`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...auth },
       body: JSON.stringify(payload),
     })
     return handleResponse(res)
   },
   updatePelicula: async (id, payload) => {
+    const auth = await getAuthHeaders()
     const res = await fetch(`${API_URL}/peliculas/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...auth },
       body: JSON.stringify(payload),
     })
     return handleResponse(res)
   },
   deletePelicula: async (id) => {
-    const res = await fetch(`${API_URL}/peliculas/${id}`, { method: 'DELETE' })
+    const auth = await getAuthHeaders()
+    const res = await fetch(`${API_URL}/peliculas/${id}`, { method: 'DELETE', headers: { ...auth } })
     return handleResponse(res)
   },
 
@@ -63,9 +85,10 @@ export const catalogoApi = {
     return handleResponse(res)
   },
   createGenero: async (nombre) => {
+    const auth = await getAuthHeaders()
     const res = await fetch(`${API_URL}/generos`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...auth },
       body: JSON.stringify({ nombre }),
     })
     return handleResponse(res)
@@ -75,9 +98,10 @@ export const catalogoApi = {
     return handleResponse(res)
   },
   createClasificacion: async (nombre) => {
+    const auth = await getAuthHeaders()
     const res = await fetch(`${API_URL}/clasificaciones`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...auth },
       body: JSON.stringify({ nombre }),
     })
     return handleResponse(res)

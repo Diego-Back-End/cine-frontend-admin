@@ -109,6 +109,29 @@ export function AuthProvider({ children }) {
     instance.logoutRedirect()
   }, [instance])
 
+  /**
+   * Centralizado - Guia 1.3 Paso 5: usar accessToken (aud = api://...) no idToken.
+   * Cualquier servicio que llame a la API debe usar este método.
+   */
+  const getAccessToken = useCallback(async () => {
+    if (!account) throw new Error('No hay cuenta activa')
+    try {
+      const result = await instance.acquireTokenSilent({
+        ...loginRequest,
+        account,
+      })
+      return result.accessToken
+    } catch (e) {
+      // InteractionRequiredAuthError -> fallback redirect
+      if (e?.errorCode === 'interaction_required' || e?.errorCode === 'consent_required' || e?.errorCode === 'login_required') {
+        await instance.acquireTokenRedirect({ ...loginRequest, account })
+        // redirect interrumpe flujo, retornamos nunca
+        return ''
+      }
+      throw e
+    }
+  }, [instance, account])
+
   const value = useMemo(
     () => ({
       user,
@@ -116,8 +139,10 @@ export function AuthProvider({ children }) {
       logout,
       loading,
       authError,
+      getAccessToken,
+      account,
     }),
-    [user, login, logout, loading, authError],
+    [user, login, logout, loading, authError, getAccessToken, account],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

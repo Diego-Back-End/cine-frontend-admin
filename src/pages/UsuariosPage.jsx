@@ -4,35 +4,41 @@ import { MdOutlinePersonSearch } from 'react-icons/md'
 import DataTable from '../components/DataTable'
 import Layout from '../components/Layout'
 
+const ROLES = ['Super Administrador', 'Administrador de Sucursal', 'Usuario']
+const ESTADOS_CUENTA = ['Activa', 'Deshabilitada']
+
 const MOCK_USERS = [
   { id: 1, email: 'admin@prueba.cl', role: 'Super Administrador', status: 'Activa' },
   { id: 2, email: 'branch@pruebas.cl', role: 'Administrador de Sucursal', status: 'Activa' },
   { id: 3, email: 'carmen.lopez@cine.cl', role: 'Administrador de Sucursal', status: 'Deshabilitada' },
-  { id: 4, email: 'pedro.morales@cine.cl', role: 'Administrador de Sucursal', status: 'Activa' },
+  { id: 4, email: 'pedro.morales@cine.cl', role: 'Usuario', status: 'Activa' },
   { id: 5, email: 'lucia.fernandez@cine.cl', role: 'Administrador de Sucursal', status: 'Activa' },
-  { id: 6, email: 'diego.salazar@cine.cl', role: 'Administrador de Sucursal', status: 'Deshabilitada' },
+  { id: 6, email: 'diego.salazar@cine.cl', role: 'Usuario', status: 'Deshabilitada' },
   { id: 7, email: 'valentina.rios@cine.cl', role: 'Administrador de Sucursal', status: 'Activa' },
-  { id: 8, email: 'matias.espinoza@cine.cl', role: 'Administrador de Sucursal', status: 'Activa' },
-  { id: 9, email: 'fernanda.guzman@cine.cl', role: 'Administrador de Sucursal', status: 'Deshabilitada' },
+  { id: 8, email: 'matias.espinoza@cine.cl', role: 'Super Administrador', status: 'Activa' },
+  { id: 9, email: 'fernanda.guzman@cine.cl', role: 'Usuario', status: 'Deshabilitada' },
   { id: 10, email: 'andres.vargas@cine.cl', role: 'Administrador de Sucursal', status: 'Activa' },
-  { id: 11, email: 'camila.reyes@cine.cl', role: 'Administrador de Sucursal', status: 'Activa' },
+  { id: 11, email: 'camila.reyes@cine.cl', role: 'Usuario', status: 'Activa' },
   { id: 12, email: 'sebastian.muñoz@cine.cl', role: 'Administrador de Sucursal', status: 'Activa' },
 ]
 
 const COLUMNS = [
   { key: 'email', header: 'Email', searchable: true, searchPlaceholder: 'email' },
-  { key: 'role', header: 'Rol', searchable: true, searchPlaceholder: 'rol' },
+  {
+    key: 'role',
+    header: 'Rol',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: ROLES,
+  },
   {
     key: 'status',
     header: 'Estado de cuenta',
-    searchable: true,
-    searchPlaceholder: 'estado',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: ESTADOS_CUENTA,
     render: (user) => (
-      <span
-        className={`badge badge-sm ${
-          user.status === 'Activa' ? 'badge-success' : 'badge-error'
-        }`}
-      >
+      <span className={`badge badge-sm ${user.status === 'Activa' ? 'badge-success' : 'badge-error'}`}>
         {user.status}
       </span>
     ),

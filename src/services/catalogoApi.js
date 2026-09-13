@@ -38,21 +38,24 @@ async function handleResponse(res) {
 export const catalogoApi = {
   // Películas
   getPeliculas: async (params = {}) => {
+    const auth = await getAuthHeaders()
     const qs = new URLSearchParams()
     if (params.search) qs.set('search', params.search)
     if (params.genero) qs.set('genero', params.genero)
     if (params.clasificacion) qs.set('rating', params.clasificacion)
     if (params.estado) qs.set('estado', params.estado)
     const url = `${API_URL}/peliculas${qs.toString() ? `?${qs}` : ''}`
-    const res = await fetch(url)
+    const res = await fetch(url, { headers: { ...auth } })
     return handleResponse(res)
   },
   getPeliculaById: async (id) => {
-    const res = await fetch(`${API_URL}/peliculas/${id}`)
+    const auth = await getAuthHeaders()
+    const res = await fetch(`${API_URL}/peliculas/${id}`, { headers: { ...auth } })
     return handleResponse(res)
   },
   getPeliculaBySlug: async (slug) => {
-    const res = await fetch(`${API_URL}/peliculas/slug/${slug}`)
+    const auth = await getAuthHeaders()
+    const res = await fetch(`${API_URL}/peliculas/slug/${slug}`, { headers: { ...auth } })
     return handleResponse(res)
   },
   createPelicula: async (payload) => {
@@ -81,7 +84,8 @@ export const catalogoApi = {
 
   // Taxonomías
   getGeneros: async () => {
-    const res = await fetch(`${API_URL}/generos`)
+    const auth = await getAuthHeaders()
+    const res = await fetch(`${API_URL}/generos`, { headers: { ...auth } })
     return handleResponse(res)
   },
   createGenero: async (nombre) => {
@@ -94,7 +98,8 @@ export const catalogoApi = {
     return handleResponse(res)
   },
   getClasificaciones: async () => {
-    const res = await fetch(`${API_URL}/clasificaciones`)
+    const auth = await getAuthHeaders()
+    const res = await fetch(`${API_URL}/clasificaciones`, { headers: { ...auth } })
     return handleResponse(res)
   },
   createClasificacion: async (nombre) => {
@@ -107,7 +112,8 @@ export const catalogoApi = {
     return handleResponse(res)
   },
   getEstados: async () => {
-    const res = await fetch(`${API_URL}/estados`)
+    const auth = await getAuthHeaders()
+    const res = await fetch(`${API_URL}/estados`, { headers: { ...auth } })
     return handleResponse(res)
   },
 }

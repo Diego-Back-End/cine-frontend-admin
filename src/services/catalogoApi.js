@@ -1,4 +1,5 @@
-const API_URL = import.meta.env.VITE_CATALOGO_API_URL || 'http://localhost:8081/api'
+let raw = (import.meta.env.VITE_CATALOGO_API_URL || import.meta.env.VITE_API_URL || 'http://localhost:8081/api').replace(/\/+$/, '')
+const API_URL = raw.endsWith('/api') ? raw : `${raw}/api`
 
 // Inyectado desde AuthContext para desacoplar MSAL del servicio.
 // Debe setearse en App.jsx / main.jsx una vez. Fallback: intenta leer token desde helper global.

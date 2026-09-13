@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { catalogoApi } from '../services/catalogoApi'
+import { useAuth } from './AuthContext'
 
 const DEFAULT_GENEROS = [
   'Acción',
@@ -35,6 +36,7 @@ function load(key, fallback) {
 const CatalogMetaContext = createContext(null)
 
 export function CatalogMetaProvider({ children }) {
+  const { user } = useAuth()
   const [generos, setGeneros] = useState(() => load('cine_generos', DEFAULT_GENEROS))
   const [clasificaciones, setClasificaciones] = useState(() =>
     load('cine_clasificaciones', DEFAULT_CLASIFICACIONES)
@@ -44,17 +46,19 @@ export function CatalogMetaProvider({ children }) {
   // Sincroniza con backend si está disponible (sin Gateway, directo 8081); fallback a localStorage/defaults
   useEffect(() => {
     let cancelled = false
-    catalogoApi.getGeneros().then((data) => {
-      if (!cancelled && Array.isArray(data) && data.length > 0) setGeneros(data)
-    }).catch(() => {})
-    catalogoApi.getClasificaciones().then((data) => {
-      if (!cancelled && Array.isArray(data) && data.length > 0) setClasificaciones(data)
-    }).catch(() => {})
-    catalogoApi.getEstados().then((data) => {
-      // estados es estático, no se setea, solo para validar que backend responde
-    }).catch(() => {})
+    if (user) {
+      catalogoApi.getGeneros().then((data) => {
+        if (!cancelled && Array.isArray(data) && data.length > 0) setGeneros(data)
+      }).catch(() => {})
+      catalogoApi.getClasificaciones().then((data) => {
+        if (!cancelled && Array.isArray(data) && data.length > 0) setClasificaciones(data)
+      }).catch(() => {})
+      catalogoApi.getEstados().then((data) => {
+        // estados es estático, no se setea, solo para validar que backend responde
+      }).catch(() => {})
+    }
     return () => { cancelled = true }
-  }, [])
+  }, [user])
 
   useEffect(() => {
     try {

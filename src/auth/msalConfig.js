@@ -17,7 +17,7 @@ const msalConfig = {
     clientId,
     authority: `https://login.microsoftonline.com/${tenantId}/v2.0`,
     knownAuthorities: [`https://login.microsoftonline.com/${tenantId}/v2.0`],
-    redirectUri: import.meta.env.VITE_AZURE_REDIRECT_URI || defaultRedirectUri,
+    redirectUri: defaultRedirectUri,
     postLogoutRedirectUri: defaultRedirectUri,
   },
   cache: {

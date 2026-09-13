@@ -2,7 +2,8 @@ name: Deploy Frontend Admin to GitHub Pages
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -14,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -37,6 +38,8 @@ jobs:
           VITE_AZURE_SCOPE: ${{ secrets.VITE_AZURE_SCOPE }}
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
           VITE_CATALOGO_API_URL: ${{ secrets.VITE_CATALOGO_API_URL || secrets.VITE_API_URL }}
+          VITE_SUPER_ADMIN_ROLE_ID: ${{ secrets.VITE_SUPER_ADMIN_ROLE_ID }}
+          VITE_BRANCH_ADMIN_ROLE_ID: ${{ secrets.VITE_BRANCH_ADMIN_ROLE_ID }}
         run: npm run build
 
       - name: Handle Single Page Application Routing (SPA)
@@ -50,6 +53,13 @@ jobs:
         with:
           path: './dist'
 
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

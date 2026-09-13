@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router'
+import { Route, Routes, Navigate } from 'react-router'
 import { ROLES } from '../context/AuthContext'
 import LoginPage from '../pages/LoginPage'
 import PanelInicioPage from '../pages/PanelInicioPage'
@@ -21,7 +21,11 @@ const PANEL_ROLES = [ROLES.SUPER_ADMIN, ROLES.BRANCH_ADMIN]
 function AppRoutes() {
   return (
     <Routes>
+      {/* Rutas públicas de acceso e inicio de sesión */}
       <Route path="/" element={<LoginPage />} />
+      <Route path="/login" element={<LoginPage />} />
+
+      {/* Rutas protegidas */}
       <Route element={<ProtectedRoute roles={PANEL_ROLES} />}>
         <Route path="/panel-inicio" element={<PanelInicioPage />} />
         <Route path="/panel-inicio/peliculas" element={<PeliculasPage />} />
@@ -38,7 +42,10 @@ function AppRoutes() {
           <Route path="/panel-inicio/usuarios/crear" element={<CrearUsuarioPage />} />
         </Route>
       </Route>
-      <Route path="*" element={<NotFoundPage />} />
+
+      {/* Página 404 para rutas desconocidas */}
+      <Route path="/404" element={<NotFoundPage />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }

@@ -1,0 +1,55 @@
+name: Deploy Frontend Admin to GitHub Pages
+
+on:
+  push:
+    branches: [ main, develop ]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        env:
+          VITE_AZURE_CLIENT_ID: ${{ secrets.VITE_AZURE_CLIENT_ID }}
+          VITE_AZURE_AUTHORITY: ${{ secrets.VITE_AZURE_AUTHORITY }}
+          VITE_AZURE_REDIRECT_URI: ${{ secrets.VITE_AZURE_REDIRECT_URI }}
+          VITE_AZURE_SCOPE: ${{ secrets.VITE_AZURE_SCOPE }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_CATALOGO_API_URL: ${{ secrets.VITE_CATALOGO_API_URL || secrets.VITE_API_URL }}
+        run: npm run build
+
+      - name: Handle Single Page Application Routing (SPA)
+        run: cp dist/index.html dist/404.html
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

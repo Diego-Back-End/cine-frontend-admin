@@ -24,22 +24,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
       - name: Build project
-        env:
-          VITE_AZURE_CLIENT_ID: ${{ secrets.VITE_AZURE_CLIENT_ID }}
-          VITE_AZURE_AUTHORITY: ${{ secrets.VITE_AZURE_AUTHORITY }}
-          VITE_AZURE_REDIRECT_URI: ${{ secrets.VITE_AZURE_REDIRECT_URI }}
-          VITE_AZURE_SCOPE: ${{ secrets.VITE_AZURE_SCOPE }}
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
-          VITE_CATALOGO_API_URL: ${{ secrets.VITE_CATALOGO_API_URL || secrets.VITE_API_URL }}
-          VITE_SUPER_ADMIN_ROLE_ID: ${{ secrets.VITE_SUPER_ADMIN_ROLE_ID }}
-          VITE_BRANCH_ADMIN_ROLE_ID: ${{ secrets.VITE_BRANCH_ADMIN_ROLE_ID }}
         run: npm run build
 
       - name: Handle Single Page Application Routing (SPA)

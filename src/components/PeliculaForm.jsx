@@ -1,10 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { FiImage, FiX } from 'react-icons/fi'
 import { useCatalogMeta } from '../context/CatalogMetaContext'
 
 function PeliculaForm({ initialData = null, onSubmit, submitLabel = 'Guardar película' }) {
-  const fileInputRef = useRef(null)
   const { generos, clasificaciones, estados } = useCatalogMeta()
 
   const [titulo, setTitulo] = useState(initialData?.title ?? '')
@@ -12,12 +11,25 @@ function PeliculaForm({ initialData = null, onSubmit, submitLabel = 'Guardar pel
   const [duracion, setDuracion] = useState(
     initialData?.duration ? String(initialData.duration) : ''
   )
-  const [genero, setGenero] = useState(initialData?.genre ?? '')
+  const [generosSeleccionados, setGenerosSeleccionados] = useState(
+    Array.isArray(initialData?.generos)
+      ? initialData.generos
+      : initialData?.genre
+        ? [initialData.genre]
+        : []
+  )
+  const [generosDropdownOpen, setGenerosDropdownOpen] = useState(false)
+
+  const toggleGenero = (genero) => {
+    if (generosSeleccionados.includes(genero)) {
+      setGenerosSeleccionados(generosSeleccionados.filter((g) => g !== genero))
+    } else {
+      setGenerosSeleccionados([...generosSeleccionados, genero])
+    }
+  }
   const [clasificacion, setClasificacion] = useState(initialData?.rating ?? '')
   const [estado, setEstado] = useState(initialData?.estado ?? '')
-  const [posterFile, setPosterFile] = useState(null)
   const [posterUrl, setPosterUrl] = useState(initialData?.poster ?? '')
-  const [preview, setPreview] = useState(initialData?.poster ?? null)
 
   // Sincroniza cuando initialData cambia (editar) — sincronización intencional de props a estado
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -26,47 +38,22 @@ function PeliculaForm({ initialData = null, onSubmit, submitLabel = 'Guardar pel
       setTitulo(initialData.title ?? '')
       setSinopsis(initialData.sinopsis ?? '')
       setDuracion(initialData.duration ? String(initialData.duration) : '')
-      setGenero(initialData.genre ?? '')
+      setGenerosSeleccionados(
+        Array.isArray(initialData?.generos)
+          ? initialData.generos
+          : initialData?.genre
+            ? [initialData.genre]
+            : []
+      )
       setClasificacion(initialData.rating ?? '')
       setEstado(initialData.estado ?? '')
       setPosterUrl(initialData.poster ?? '')
-      setPreview(initialData.poster ?? null)
-      setPosterFile(null)
-      if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }, [initialData])
 
-  const handlePlaceholderClick = () => fileInputRef.current?.click()
+  const handleUrlChange = (event) => setPosterUrl(event.target.value)
 
-  const handleFileChange = (event) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-    if (!file.type.startsWith('image/')) return
-    setPosterFile(file)
-    setPosterUrl('')
-    const reader = new FileReader()
-    reader.onload = (e) => setPreview(e.target.result)
-    reader.readAsDataURL(file)
-  }
-
-  const handleUrlChange = (event) => {
-    const url = event.target.value
-    setPosterUrl(url)
-    if (url.trim()) {
-      setPosterFile(null)
-      if (fileInputRef.current) fileInputRef.current.value = ''
-      setPreview(url.trim())
-    } else {
-      setPreview(null)
-    }
-  }
-
-  const handleClearImage = () => {
-    setPosterFile(null)
-    setPosterUrl('')
-    setPreview(null)
-    if (fileInputRef.current) fileInputRef.current.value = ''
-  }
+  const handleClearImage = () => setPosterUrl('')
 
   const handleDuracionChange = (event) => {
     const value = event.target.value
@@ -79,11 +66,10 @@ function PeliculaForm({ initialData = null, onSubmit, submitLabel = 'Guardar pel
       titulo: titulo.trim(),
       sinopsis: sinopsis.trim(),
       duracion: duracion ? Number(duracion) : null,
-      genero,
+      generosSeleccionados,
       clasificacion,
       estado,
-      poster: posterFile ? posterFile.name : posterUrl.trim() || null,
-      posterPreview: preview,
+      poster: posterUrl.trim() || null,
     }
     onSubmit?.(payload)
   }
@@ -93,7 +79,7 @@ function PeliculaForm({ initialData = null, onSubmit, submitLabel = 'Guardar pel
     sinopsis.trim() &&
     duracion.trim() &&
     Number(duracion) > 0 &&
-    genero &&
+    generosSeleccionados.length > 0 &&
     clasificacion &&
     estado
 
@@ -115,38 +101,26 @@ function PeliculaForm({ initialData = null, onSubmit, submitLabel = 'Guardar pel
 
         <fieldset className="fieldset">
           <legend className="fieldset-legend">Imagen de cartelera</legend>
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={handlePlaceholderClick}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') handlePlaceholderClick()
-            }}
-            className="card cursor-pointer border-2 border-dashed border-base-300 bg-base-200 transition-colors hover:border-primary"
-          >
-            <figure className="aspect-[2/3] overflow-hidden bg-base-200">
-              {preview ? (
-                <img src={preview} alt="Preview cartelera" className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full w-full flex-col items-center justify-center gap-2 p-6 text-base-content/50">
-                  <FiImage className="size-10" />
-                  <p className="text-center text-sm">Click para subir imagen</p>
-                  <p className="text-center text-xs">o pega una URL abajo</p>
-                </div>
-              )}
-            </figure>
+          <div className="aspect-[2/3] overflow-hidden rounded-box border-2 border-dashed border-base-300 bg-base-200">
+            {posterUrl.trim() ? (
+              <img
+                src={posterUrl.trim()}
+                alt="Preview cartelera"
+                className="h-full w-full object-cover"
+                onError={(e) => {
+                  e.target.src = `${import.meta.env.BASE_URL}default-poster.svg`
+                }}
+              />
+            ) : (
+              <div className="flex h-full w-full flex-col items-center justify-center gap-2 p-6 text-base-content/50">
+                <FiImage className="size-10" />
+                <p className="text-center text-sm">Pega una URL de imagen</p>
+              </div>
+            )}
           </div>
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileChange}
-          />
-
           <div className="mt-2">
-            <label className="label text-xs text-base-content/60">o pega URL de la imagen</label>
+            <label className="label text-xs text-base-content/60">URL de la imagen</label>
             <div className="flex gap-2">
               <input
                 type="url"
@@ -155,7 +129,7 @@ function PeliculaForm({ initialData = null, onSubmit, submitLabel = 'Guardar pel
                 value={posterUrl}
                 onChange={handleUrlChange}
               />
-              {preview && (
+              {posterUrl.trim() && (
                 <button
                   type="button"
                   className="btn btn-ghost btn-sm btn-square"
@@ -166,9 +140,6 @@ function PeliculaForm({ initialData = null, onSubmit, submitLabel = 'Guardar pel
                 </button>
               )}
             </div>
-            <p className="mt-1 text-xs text-base-content/50">
-              Solo uno: si subes archivo se borra la URL y viceversa.
-            </p>
           </div>
         </fieldset>
       </div>
@@ -205,22 +176,41 @@ function PeliculaForm({ initialData = null, onSubmit, submitLabel = 'Guardar pel
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <fieldset className="fieldset">
-            <legend className="fieldset-legend">Género *</legend>
-            <select
-              className="select select-bordered w-full"
-              value={genero}
-              onChange={(e) => setGenero(e.target.value)}
-              required
-            >
-              <option value="" disabled>
-                Selecciona género
-              </option>
-              {generos.map((g) => (
-                <option key={g} value={g}>
-                  {g}
-                </option>
-              ))}
-            </select>
+            <legend className="fieldset-legend">Géneros *</legend>
+            <div className="dropdown">
+              <div className="select select-bordered w-full">
+                <button
+                  type="button"
+                  className="select-button"
+                  onClick={() => setGenerosDropdownOpen(!generosDropdownOpen)}
+                  aria-expanded={generosDropdownOpen}
+                >
+                  {generosSeleccionados.length === 0
+                    ? 'Seleccionar géneros...'
+                    : `${generosSeleccionados.length} género${generosSeleccionados.length > 1 ? 's seleccionados' : ' seleccionado'}`}
+                </button>
+              </div>
+              {generosDropdownOpen && (
+                <ul className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52 z-50">
+                  {generos.map((g) => (
+                    <li key={g}>
+                      <label className="cursor-pointer flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          className="checkbox checkbox-sm"
+                          checked={generosSeleccionados.includes(g)}
+                          onChange={() => toggleGenero(g)}
+                        />
+                        {g}
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <p className="label text-xs text-base-content/50">
+              Selecciona uno o más géneros para la película.
+            </p>
           </fieldset>
 
           <fieldset className="fieldset">
@@ -270,7 +260,7 @@ function PeliculaForm({ initialData = null, onSubmit, submitLabel = 'Guardar pel
             {submitLabel}
           </button>
         </div>
-        <p className="text-right text-xs text-base-content/40">* Campos obligatorios. Guardado pendiente de gateway.</p>
+        <p className="text-right text-xs text-base-content/40">* Campos obligatorios.</p>
       </div>
     </form>
   )

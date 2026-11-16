@@ -111,4 +111,50 @@ export const catalogoApi = {
     const res = await fetch(`${API_URL}/estados`)
     return handleResponse(res)
   },
+
+  // Sucursales
+  getSucursales: async () => {
+    const res = await fetch(`${API_URL}/sucursales`)
+    return handleResponse(res)
+  },
+  getSucursalById: async (id) => {
+    const res = await fetch(`${API_URL}/sucursales/${id}`)
+    return handleResponse(res)
+  },
+  createSucursal: async (payload) => {
+    const auth = await getAuthHeaders()
+    const res = await fetch(`${API_URL}/sucursales`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...auth },
+      body: JSON.stringify(payload),
+    })
+    return handleResponse(res)
+  },
+  updateSucursal: async (id, payload) => {
+    const auth = await getAuthHeaders()
+    const res = await fetch(`${API_URL}/sucursales/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...auth },
+      body: JSON.stringify(payload),
+    })
+    return handleResponse(res)
+  },
+
+  // Funciones
+  getFunciones: async (params = {}) => {
+    const qs = new URLSearchParams()
+    if (params.sucursalId) qs.set('sucursalId', params.sucursalId)
+    const url = `${API_URL}/funciones${qs.toString() ? `?${qs}` : ''}`
+    const res = await fetch(url)
+    return handleResponse(res)
+  },
+  createFuncion: async (payload) => {
+    const auth = await getAuthHeaders()
+    const res = await fetch(`${API_URL}/funciones`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...auth },
+      body: JSON.stringify(payload),
+    })
+    return handleResponse(res)
+  },
 }

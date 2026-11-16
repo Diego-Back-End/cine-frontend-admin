@@ -123,14 +123,32 @@ function DataTable({ title, addLabel, onAdd, entityLabel, columns, data, actions
     )
   }
 
+  const renderActions = (row) => (
+    <div className="flex items-center justify-center gap-2">
+      {actions.map((action) => (
+        <button
+          key={action.label}
+          type="button"
+          className={action.className}
+          aria-label={action.label}
+          onClick={() => action.onClick(row)}
+        >
+          {action.icon}
+        </button>
+      ))}
+    </div>
+  )
+
   return (
     <section className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold md:text-3xl">{title}</h1>
-        <button type="button" className="btn btn-primary btn-sm gap-2" onClick={onAdd}>
-          <FaPlus className="size-3" />
-          {addLabel}
-        </button>
+        {onAdd && (
+          <button type="button" className="btn btn-primary btn-sm gap-2" onClick={onAdd}>
+            <FaPlus className="size-3" />
+            {addLabel}
+          </button>
+        )}
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -154,7 +172,27 @@ function DataTable({ title, addLabel, onAdd, entityLabel, columns, data, actions
         </label>
       </div>
 
-      <div className="overflow-x-auto rounded-box border border-base-content/5 bg-base-100">
+      {filterableColumns.length > 0 && (
+        <div className="space-y-3 md:hidden">
+          {filterableColumns.map((column) => (
+            <label key={column.key} className="flex flex-col gap-1">
+              <span className="text-xs text-base-content/60">{column.header}</span>
+              {renderFilterControl(column)}
+            </label>
+          ))}
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm w-full gap-1 text-base-content/60"
+            onClick={handleClearFilters}
+            disabled={!hasActiveFilters}
+          >
+            <FaTimes className="size-3" />
+            Limpiar filtros
+          </button>
+        </div>
+      )}
+
+      <div className="hidden overflow-x-auto rounded-box border border-base-content/5 bg-base-100 md:block">
         <table className="table">
           <thead>
             <tr className="bg-base-200 text-sm">
@@ -189,21 +227,7 @@ function DataTable({ title, addLabel, onAdd, entityLabel, columns, data, actions
                 {columns.map((column) => (
                   <td key={column.key}>{column.render ? column.render(row) : row[column.key]}</td>
                 ))}
-                <td>
-                  <div className="flex items-center justify-center gap-2">
-                    {actions.map((action) => (
-                      <button
-                        key={action.label}
-                        type="button"
-                        className={action.className}
-                        aria-label={action.label}
-                        onClick={() => action.onClick(row)}
-                      >
-                        {action.icon}
-                      </button>
-                    ))}
-                  </div>
-                </td>
+                <td>{renderActions(row)}</td>
               </tr>
             ))}
             {visibleRows.length === 0 && (
@@ -215,6 +239,33 @@ function DataTable({ title, addLabel, onAdd, entityLabel, columns, data, actions
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="space-y-3 md:hidden">
+        {visibleRows.map((row) => (
+          <article key={row.id} className="card card-border border-base-300 bg-base-100 shadow-sm">
+            <div className="card-body gap-2 p-4">
+              {columns.map((column) => (
+                <div key={column.key} className="flex items-start justify-between gap-4">
+                  <span className="shrink-0 text-xs uppercase tracking-wide text-base-content/50">
+                    {column.header}
+                  </span>
+                  <div className="min-w-0 break-words text-right text-sm">
+                    {column.render ? column.render(row) : row[column.key]}
+                  </div>
+                </div>
+              ))}
+              {actions.length > 0 && (
+                <div className="border-t border-base-300 pt-2">{renderActions(row)}</div>
+              )}
+            </div>
+          </article>
+        ))}
+        {visibleRows.length === 0 && (
+          <p className="py-8 text-center text-base-content/50">
+            No se encontraron {entityLabel} para mostrar.
+          </p>
+        )}
       </div>
 
       <div className="flex items-center justify-center gap-1">

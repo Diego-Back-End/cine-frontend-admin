@@ -1,24 +1,29 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { FaPencilAlt, FaTrashAlt } from 'react-icons/fa'
+import { FaPencilAlt, FaRegClock, FaTrashAlt } from 'react-icons/fa'
 import { MdOutlinePersonSearch } from 'react-icons/md'
 import DataTable from '../components/DataTable'
 import Layout from '../components/Layout'
+import CrearFuncionModal from '../components/CrearFuncionModal'
 import EliminarPeliculaModal from '../components/EliminarPeliculaModal'
 import { MOCK_MOVIES_FULL } from '../data/peliculasMock'
 import { getPeliculaSlug } from '../utils/slugify'
 import { useCatalogMeta } from '../context/CatalogMetaContext'
+import { ROLES, useAuth } from '../context/AuthContext'
 import { catalogoApi } from '../services/catalogoApi'
 
 const ACTION_ICON_CLASS = 'size-3.5'
+const DEFAULT_POSTER = `${import.meta.env.BASE_URL}default-poster.svg`
 
 function PeliculasPage() {
   const navigate = useNavigate()
-  const { generos, clasificaciones, estados } = useCatalogMeta()
+  const { user } = useAuth()
+  const { generos, clasificaciones } = useCatalogMeta()
   const [movies, setMovies] = useState(MOCK_MOVIES_FULL)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [peliculaAEliminar, setPeliculaAEliminar] = useState(null)
+  const [peliculaAFuncionar, setPeliculaAFuncionar] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -29,11 +34,11 @@ function PeliculasPage() {
       .then((data) => {
         if (cancelled) return
         if (Array.isArray(data) && data.length > 0) {
-          // Backend devuelve PeliculaResponse con campos titulo, duracion, genero, clasificacion, poster, slug
           const mapped = data.map((p) => ({
             id: p.id,
             title: p.titulo ?? p.title,
             genre: p.genero ?? p.genre ?? (p.generos?.[0] ?? ''),
+            generos: Array.isArray(p.generos) ? p.generos : p.genero ? [p.genero] : [],
             duration: p.duracion ?? p.duration ?? p.duracionMinutos,
             rating: p.clasificacion ?? p.rating,
             estado: p.estado,
@@ -55,7 +60,23 @@ function PeliculasPage() {
     }
   }, [])
 
+  const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN
+
   const COLUMNS = [
+    {
+      key: 'poster',
+      header: 'Imagen',
+      render: (movie) => (
+        <img
+          src={movie.poster?.trim() ? movie.poster : DEFAULT_POSTER}
+          alt={movie.title}
+          className="h-16 w-11 rounded object-cover"
+          onError={(e) => {
+            e.target.src = DEFAULT_POSTER
+          }}
+        />
+      ),
+    },
     { key: 'title', header: 'Título', searchable: true, searchPlaceholder: 'título' },
     {
       key: 'genre',
@@ -75,13 +96,6 @@ function PeliculasPage() {
       filterable: true,
       filterType: 'select',
       filterOptions: clasificaciones,
-    },
-    {
-      key: 'estado',
-      header: 'Estado',
-      filterable: true,
-      filterType: 'select',
-      filterOptions: estados,
     },
   ]
 
@@ -104,29 +118,44 @@ function PeliculasPage() {
   }
 
   const handleView = (movie) => {
-    navigate(`/pelicula/${getPeliculaSlug(movie.title)}`)
+    navigate(`/pelicula/${movie.slug ?? getPeliculaSlug(movie.title)}`)
   }
 
-  const ACTIONS = [
+  const handleHorarios = (movie) => {
+    setPeliculaAFuncionar(movie)
+  }
+
+  const ACTIONS = []
+  if (isSuperAdmin) {
+    ACTIONS.push(
+      {
+        label: 'Editar película',
+        icon: <FaPencilAlt className={ACTION_ICON_CLASS} />,
+        className: 'btn btn-ghost btn-xs text-info',
+        onClick: handleEdit,
+      },
+      {
+        label: 'Eliminar película',
+        icon: <FaTrashAlt className={ACTION_ICON_CLASS} />,
+        className: 'btn btn-ghost btn-xs text-error',
+        onClick: handleDeleteClick,
+      }
+    )
+  }
+  ACTIONS.push(
     {
-      label: 'Editar película',
-      icon: <FaPencilAlt className={ACTION_ICON_CLASS} />,
-      className: 'btn btn-ghost btn-xs text-info',
-      onClick: handleEdit,
-    },
-    {
-      label: 'Eliminar película',
-      icon: <FaTrashAlt className={ACTION_ICON_CLASS} />,
-      className: 'btn btn-ghost btn-xs text-error',
-      onClick: handleDeleteClick,
+      label: 'Horarios',
+      icon: <FaRegClock className={ACTION_ICON_CLASS} />,
+      className: 'btn btn-ghost btn-xs text-success',
+      onClick: handleHorarios,
     },
     {
       label: 'Ver película',
       icon: <MdOutlinePersonSearch className={ACTION_ICON_CLASS} />,
       className: 'btn btn-ghost btn-xs text-blue',
       onClick: handleView,
-    },
-  ]
+    }
+  )
 
   return (
     <Layout>
@@ -139,7 +168,11 @@ function PeliculasPage() {
       <DataTable
         title="Películas"
         addLabel="Añadir Película"
-        onAdd={() => navigate('/panel-inicio/peliculas/crear')}
+        onAdd={
+          isSuperAdmin
+            ? () => navigate('/panel-inicio/peliculas/crear')
+            : undefined
+        }
         entityLabel="películas"
         columns={COLUMNS}
         data={movies}
@@ -150,6 +183,13 @@ function PeliculasPage() {
         onClose={() => setPeliculaAEliminar(null)}
         onConfirm={handleConfirmDelete}
       />
+      {peliculaAFuncionar && (
+        <CrearFuncionModal
+          key={peliculaAFuncionar.id}
+          pelicula={peliculaAFuncionar}
+          onClose={() => setPeliculaAFuncionar(null)}
+        />
+      )}
     </Layout>
   )
 }

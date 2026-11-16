@@ -3,7 +3,6 @@ import {
   FiDollarSign,
   FiFilm,
   FiMonitor,
-  FiUsers,
 } from 'react-icons/fi'
 import Layout from '../components/Layout'
 import { ROLES, useAuth } from '../context/AuthContext'
@@ -13,7 +12,6 @@ const STATS_BY_ROLE = {
     { title: 'Recaudación global del mes', value: '—', icon: <FiDollarSign className="size-5" /> },
     { title: 'Sucursales activas', value: '—', icon: <FiMonitor className="size-5" /> },
     { title: 'Funciones programadas', value: '—', icon: <FiFilm className="size-5" /> },
-    { title: 'Administradores registrados', value: '—', icon: <FiUsers className="size-5" /> },
   ],
   [ROLES.BRANCH_ADMIN]: [
     { title: 'Recaudación de mi sucursal', value: '—', icon: <FiDollarSign className="size-5" /> },
@@ -41,7 +39,7 @@ function PanelInicioPage() {
           </p>
         </header>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {stats.map((stat) => (
             <article key={stat.title} className="card card-border border-base-300 bg-base-100 shadow-sm">
               <div className="card-body gap-3">

@@ -4,12 +4,15 @@ import Layout from '../components/Layout'
 import PeliculaForm from '../components/PeliculaForm'
 import { getPeliculaById } from '../data/peliculasMock'
 import { catalogoApi } from '../services/catalogoApi'
+import ConfirmCreateModal from '../components/ConfirmCreateModal'
 
 function EditarPeliculaPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [pelicula, setPelicula] = useState(() => getPeliculaById(id))
   const [loading, setLoading] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [pendingPayload, setPendingPayload] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -21,7 +24,7 @@ function EditarPeliculaPage() {
         const mapped = {
           id: data.id,
           title: data.titulo ?? data.title,
-          genre: data.genero ?? data.genre ?? (data.generos?.[0] ?? ''),
+          generos: data.generos ?? (data.genre ? [data.genre] : []),
           duration: data.duracion ?? data.duration ?? data.duracionMinutos,
           rating: data.clasificacion ?? data.rating,
           estado: data.estado,
@@ -39,6 +42,35 @@ function EditarPeliculaPage() {
     }
   }, [id])
 
+  const handleSubmit = (payload) => {
+    setPendingPayload(payload)
+    setConfirmOpen(true)
+  }
+
+  const handleConfirm = async () => {
+    if (!pendingPayload) return
+    try {
+      await catalogoApi.updatePelicula(id, {
+        titulo: pendingPayload.titulo,
+        sinopsis: pendingPayload.sinopsis,
+        duracion: pendingPayload.duracion,
+        generos: pendingPayload.generosSeleccionados,
+        clasificacion: pendingPayload.clasificacion,
+        estado: pendingPayload.estado,
+        poster: pendingPayload.poster,
+      })
+    } catch (e) {
+      console.error('PUT backend falló, fallback mock', e)
+    }
+    setConfirmOpen(false)
+    setPendingPayload(null)
+    navigate('/panel-inicio/peliculas')
+  }
+
+  const requiredPhrase = pendingPayload
+    ? `EDITAR PELÍCULA ${pendingPayload.titulo.trim().toUpperCase()}`
+    : ''
+
   if (!pelicula) {
     return (
       <Layout>
@@ -52,23 +84,6 @@ function EditarPeliculaPage() {
         </section>
       </Layout>
     )
-  }
-
-  const handleSubmit = async (payload) => {
-    try {
-      await catalogoApi.updatePelicula(id, {
-        titulo: payload.titulo,
-        sinopsis: payload.sinopsis,
-        duracion: payload.duracion,
-        genero: payload.genero,
-        clasificacion: payload.clasificacion,
-        estado: payload.estado,
-        poster: payload.poster,
-      })
-    } catch (e) {
-      console.error('PUT backend falló, fallback mock', e)
-    }
-    navigate('/panel-inicio/peliculas')
   }
 
   if (loading && !pelicula) {
@@ -92,8 +107,26 @@ function EditarPeliculaPage() {
           Editando <span className="font-semibold">{pelicula.title}</span>. Modifica los campos y guarda.
         </p>
 
-        <PeliculaForm initialData={pelicula} onSubmit={handleSubmit} submitLabel="Actualizar película" />
+        <PeliculaForm
+          initialData={pelicula}
+          onSubmit={handleSubmit}
+          submitLabel="Actualizar película"
+        />
       </section>
+
+      <ConfirmCreateModal
+        open={confirmOpen}
+        title="¿Editar película?"
+        entityLabel="película"
+        entityName={pendingPayload?.titulo ?? pelicula.title}
+        requiredPhrase={requiredPhrase}
+        action="editar"
+        onClose={() => {
+          setConfirmOpen(false)
+          setPendingPayload(null)
+        }}
+        onConfirm={handleConfirm}
+      />
     </Layout>
   )
 }

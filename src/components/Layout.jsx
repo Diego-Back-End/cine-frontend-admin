@@ -1,12 +1,13 @@
 import Footer from './Footer'
-import Sidebar from './Sidebar'
+import Navbar from './Navbar'
 
 function Layout({ children }) {
   return (
-    <Sidebar>
-      <main className="min-h-[calc(100vh-4rem)] p-4 md:p-6">{children}</main>
+    <div className="flex min-h-screen flex-col">
+      <Navbar />
+      <main className="flex-1 p-4 md:p-6">{children}</main>
       <Footer />
-    </Sidebar>
+    </div>
   )
 }
 

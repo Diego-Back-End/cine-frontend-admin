@@ -19,6 +19,12 @@ function App() {
       <CatalogoAuthBinder />
       <CatalogMetaProvider>
         <BrowserRouter basename={import.meta.env.BASE_URL}>
+          <p
+            role="note"
+            className="bg-warning px-4 py-2 text-center text-xs font-medium text-warning-content md:hidden"
+          >
+            Esta aplicación está diseñada para escritorio. Para una mejor experiencia, utiliza un PC.
+          </p>
           <AppRoutes />
         </BrowserRouter>
       </CatalogMetaProvider>

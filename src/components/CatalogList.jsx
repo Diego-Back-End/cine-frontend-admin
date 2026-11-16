@@ -90,7 +90,7 @@ function CatalogList({ title, description, entityLabel, entityType, items, onAdd
 
       <div className="card card-border border-base-300 bg-base-100">
         <div className="card-body p-0">
-          <div className="overflow-x-auto">
+          <div className="hidden overflow-x-auto md:block">
             <table className="table">
               <thead>
                 <tr className="bg-base-200">
@@ -114,6 +114,19 @@ function CatalogList({ title, description, entityLabel, entityType, items, onAdd
                 )}
               </tbody>
             </table>
+          </div>
+          <div className="divide-y divide-base-300 md:hidden">
+            {items.map((item, idx) => (
+              <div key={item} className="flex items-center justify-between gap-4 px-4 py-3">
+                <span className="text-sm text-base-content/50">{idx + 1}</span>
+                <span className="text-sm font-medium">{item}</span>
+              </div>
+            ))}
+            {items.length === 0 && (
+              <p className="py-8 text-center text-base-content/50">
+                No hay {entityLabel}s registrados.
+              </p>
+            )}
           </div>
           <div className="p-4 text-right text-xs text-base-content/40">
             Total: {items.length} {entityLabel}s

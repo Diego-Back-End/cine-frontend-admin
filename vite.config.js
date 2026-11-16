@@ -6,4 +6,7 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   base: '/cine-frontend-admin/',
+  server: {
+    port: 5173
+  }
 })

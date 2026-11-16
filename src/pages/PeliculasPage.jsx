@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { FaPencilAlt, FaTrashAlt } from 'react-icons/fa'
+import { FaPencilAlt, FaRegClock, FaTrashAlt } from 'react-icons/fa'
 import { MdOutlinePersonSearch } from 'react-icons/md'
 import DataTable from '../components/DataTable'
 import Layout from '../components/Layout'
+import CrearFuncionModal from '../components/CrearFuncionModal'
 import EliminarPeliculaModal from '../components/EliminarPeliculaModal'
 import { MOCK_MOVIES_FULL } from '../data/peliculasMock'
 import { getPeliculaSlug } from '../utils/slugify'
@@ -22,6 +23,7 @@ function PeliculasPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [peliculaAEliminar, setPeliculaAEliminar] = useState(null)
+  const [peliculaAFuncionar, setPeliculaAFuncionar] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -119,6 +121,10 @@ function PeliculasPage() {
     navigate(`/pelicula/${movie.slug ?? getPeliculaSlug(movie.title)}`)
   }
 
+  const handleHorarios = (movie) => {
+    setPeliculaAFuncionar(movie)
+  }
+
   const ACTIONS = []
   if (isSuperAdmin) {
     ACTIONS.push(
@@ -136,12 +142,20 @@ function PeliculasPage() {
       }
     )
   }
-  ACTIONS.push({
-    label: 'Ver película',
-    icon: <MdOutlinePersonSearch className={ACTION_ICON_CLASS} />,
-    className: 'btn btn-ghost btn-xs text-blue',
-    onClick: handleView,
-  })
+  ACTIONS.push(
+    {
+      label: 'Horarios',
+      icon: <FaRegClock className={ACTION_ICON_CLASS} />,
+      className: 'btn btn-ghost btn-xs text-success',
+      onClick: handleHorarios,
+    },
+    {
+      label: 'Ver película',
+      icon: <MdOutlinePersonSearch className={ACTION_ICON_CLASS} />,
+      className: 'btn btn-ghost btn-xs text-blue',
+      onClick: handleView,
+    }
+  )
 
   return (
     <Layout>
@@ -169,6 +183,13 @@ function PeliculasPage() {
         onClose={() => setPeliculaAEliminar(null)}
         onConfirm={handleConfirmDelete}
       />
+      {peliculaAFuncionar && (
+        <CrearFuncionModal
+          key={peliculaAFuncionar.id}
+          pelicula={peliculaAFuncionar}
+          onClose={() => setPeliculaAFuncionar(null)}
+        />
+      )}
     </Layout>
   )
 }

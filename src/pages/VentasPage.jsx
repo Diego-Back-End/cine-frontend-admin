@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Layout from '../components/Layout'
+import { ROLES, useAuth } from '../context/AuthContext'
 import { catalogoApi } from '../services/catalogoApi'
 
 function primerValor(...valores) {
@@ -29,6 +30,11 @@ function textoReserva(venta) {
 function textoCorreo(venta) {
   const correo = primerValor(venta.correo, venta.email, venta.usuarioEmail, venta.reserva?.email)
   return correo !== undefined ? String(correo) : '—'
+}
+
+function textoSucursal(venta) {
+  const nombre = primerValor(venta.nombreSucursal)
+  return nombre !== undefined ? String(nombre) : 'Sin sucursal'
 }
 
 function textoFuncion(valor) {
@@ -81,7 +87,97 @@ function fechaVenta(venta) {
   return formatearFecha(valor)
 }
 
+function TablaVentas({ filas, mostrarSucursal, titulo, etiquetaTotal, subtotal }) {
+  const columnas = [
+    { clave: 'reserva', header: 'Reserva' },
+    { clave: 'correo', header: 'Correo' },
+    ...(mostrarSucursal ? [{ clave: 'sucursal', header: 'Sucursal' }] : []),
+    { clave: 'funcion', header: 'Función' },
+    { clave: 'asientos', header: 'Asientos' },
+    {
+      clave: 'total',
+      header: 'Total',
+      className: 'text-right font-semibold',
+      render: (fila) => formatearMonto(fila.total),
+    },
+    { clave: 'fecha', header: 'Fecha' },
+  ]
+
+  return (
+    <section className="space-y-3">
+      {titulo && (
+        <div className="flex flex-wrap items-baseline gap-2">
+          <h2 className="text-lg font-semibold">{titulo}</h2>
+          <span className="text-sm text-base-content/60">({filas.length} ventas)</span>
+        </div>
+      )}
+
+      <div className="hidden overflow-x-auto rounded-box border border-base-content/10 bg-base-100 md:block">
+        <table className="table table-zebra">
+          <thead>
+            <tr className="bg-base-200 text-sm">
+              {columnas.map((columna) => (
+                <th key={columna.clave} className={columna.clave === 'total' ? 'text-right' : undefined}>
+                  {columna.header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filas.map((fila) => (
+              <tr key={fila.key}>
+                {columnas.map((columna) => (
+                  <td key={columna.clave} className={columna.className}>
+                    {columna.render ? columna.render(fila) : fila[columna.clave]}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+          {filas.length > 0 && (
+            <tfoot>
+              <tr className="bg-base-200 text-sm">
+                <td colSpan={columnas.length - 1} className="text-right font-semibold">
+                  {etiquetaTotal}
+                </td>
+                <td className="text-right font-bold text-primary">{formatearMonto(subtotal)}</td>
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
+
+      <div className="space-y-3 md:hidden">
+        {filas.map((fila) => (
+          <article key={fila.key} className="card card-border border-base-300 bg-base-100 shadow-sm">
+            <div className="card-body gap-2 p-4">
+              {columnas.map((columna) => (
+                <div key={columna.clave} className="flex items-start justify-between gap-4">
+                  <span className="shrink-0 text-xs uppercase tracking-wide text-base-content/50">
+                    {columna.header}
+                  </span>
+                  <span className={`min-w-0 break-words text-right text-sm ${columna.className ?? ''}`}>
+                    {columna.render ? columna.render(fila) : fila[columna.clave]}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </article>
+        ))}
+        {filas.length > 0 && (
+          <div className="flex items-center justify-between rounded-box border border-base-300 bg-base-200 p-3">
+            <span className="text-sm font-semibold">{etiquetaTotal}</span>
+            <span className="font-bold text-primary">{formatearMonto(subtotal)}</span>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
 function VentasPage() {
+  const { user } = useAuth()
+  const esSuperAdmin = user.role === ROLES.SUPER_ADMIN
   const [ventas, setVentas] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -109,6 +205,7 @@ function VentasPage() {
         key: primerValor(venta.idVenta, venta.id, venta.reservaId, `venta-${indice}`),
         reserva: textoReserva(venta),
         correo: textoCorreo(venta),
+        sucursal: textoSucursal(venta),
         funcion: textoFuncion(primerValor(venta.funcion, venta.funcionDetalle, venta.reserva?.funcion)),
         asientos: textoAsientos(primerValor(venta.asientos, venta.reserva?.asientos)),
         total: numeroTotal(venta),
@@ -116,6 +213,21 @@ function VentasPage() {
       })),
     [ventas],
   )
+
+  const grupos = useMemo(() => {
+    if (!esSuperAdmin) return []
+    const mapa = new Map()
+    filas.forEach((fila) => {
+      const actual = mapa.get(fila.sucursal) ?? []
+      actual.push(fila)
+      mapa.set(fila.sucursal, actual)
+    })
+    return Array.from(mapa, ([sucursal, filasGrupo]) => ({
+      sucursal,
+      filas: filasGrupo,
+      subtotal: filasGrupo.reduce((suma, fila) => suma + fila.total, 0),
+    }))
+  }, [filas, esSuperAdmin])
 
   const totalGeneral = useMemo(
     () => filas.reduce((suma, fila) => suma + fila.total, 0),
@@ -146,46 +258,32 @@ function VentasPage() {
 
         {loading && filas.length === 0 ? (
           <div className="loading loading-spinner" />
-        ) : (
-          <>
-            <div className="overflow-x-auto rounded-box border border-base-content/10 bg-base-100">
-              <table className="table table-zebra">
-                <thead>
-                  <tr className="bg-base-200 text-sm">
-                    <th>Reserva</th>
-                    <th>Correo</th>
-                    <th>Función</th>
-                    <th>Asientos</th>
-                    <th className="text-right">Total</th>
-                    <th>Fecha</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filas.map((fila) => (
-                    <tr key={fila.key}>
-                      <td className="font-medium">{fila.reserva}</td>
-                      <td>{fila.correo}</td>
-                      <td>{fila.funcion}</td>
-                      <td>{fila.asientos}</td>
-                      <td className="text-right font-semibold">{formatearMonto(fila.total)}</td>
-                      <td>{fila.fecha}</td>
-                    </tr>
-                  ))}
-                  {filas.length === 0 && !error && (
-                    <tr>
-                      <td colSpan={6} className="py-8 text-center text-base-content/60">
-                        No hay ventas registradas
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
+        ) : filas.length === 0 && !error ? (
+          <p className="py-8 text-center text-base-content/60">No hay ventas registradas</p>
+        ) : esSuperAdmin ? (
+          <div className="space-y-8">
+            {grupos.map((grupo) => (
+              <TablaVentas
+                key={grupo.sucursal}
+                filas={grupo.filas}
+                mostrarSucursal
+                titulo={grupo.sucursal}
+                etiquetaTotal="Subtotal"
+                subtotal={grupo.subtotal}
+              />
+            ))}
             <p className="text-right text-lg font-bold">
               Total general: <span className="text-primary">{formatearMonto(totalGeneral)}</span>
             </p>
-          </>
+          </div>
+        ) : (
+          <TablaVentas
+            filas={filas}
+            mostrarSucursal={false}
+            titulo="Ventas de mi sucursal"
+            etiquetaTotal="Total de mi sucursal"
+            subtotal={totalGeneral}
+          />
         )}
       </section>
     </Layout>

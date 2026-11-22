@@ -12,7 +12,6 @@ import { catalogoApi } from '../services/catalogoApi'
 const CARGANDO = '...'
 const SIN_DATOS = '—'
 const SIN_SUCURSAL_NOTA = 'No se pudo determinar tu sucursal.'
-const SIN_SALAS_NOTA = 'No hay datos de salas en las fuentes disponibles del panel.'
 
 function dato(valor, nota = '') {
   return { valor, nota }
@@ -113,6 +112,17 @@ function contar(data, clave) {
   return String(listaDe(data, clave).length)
 }
 
+function numeroSalas(sucursal) {
+  const numero = Number(sucursal?.cantidadSalas)
+  return Number.isFinite(numero) ? numero : 0
+}
+
+function totalSalas(data) {
+  return String(
+    listaDe(data, 'sucursales').reduce((suma, sucursal) => suma + numeroSalas(sucursal), 0),
+  )
+}
+
 async function resultado(peticion) {
   try {
     return { ok: true, data: await peticion }
@@ -125,6 +135,7 @@ const STATS_BY_ROLE = {
   [ROLES.SUPER_ADMIN]: [
     { title: 'Recaudación global del mes', clave: 'recaudacion', icon: <FiDollarSign className="size-5" /> },
     { title: 'Sucursales activas', clave: 'sucursales', icon: <FiMonitor className="size-5" /> },
+    { title: 'Salas activas', clave: 'salasActivas', icon: <FiMonitor className="size-5" /> },
     { title: 'Funciones programadas', clave: 'funciones', icon: <FiFilm className="size-5" /> },
   ],
   [ROLES.BRANCH_ADMIN]: [
@@ -143,7 +154,7 @@ function PanelInicioPage() {
     funciones: dato(CARGANDO),
     recaudacionSucursal: dato(CARGANDO),
     funcionesHoy: dato(CARGANDO),
-    salasActivas: dato(SIN_DATOS, SIN_SALAS_NOTA),
+    salasActivas: dato(CARGANDO),
   })
 
   useEffect(() => {
@@ -181,6 +192,7 @@ function PanelInicioPage() {
           ...prev,
           recaudacionSucursal: recaudacion,
           funcionesHoy: sucursalId === undefined ? dato(SIN_DATOS, SIN_SUCURSAL_NOTA) : dato(CARGANDO),
+          salasActivas: sucursalId === undefined ? dato(SIN_DATOS) : dato(String(numeroSalas(sucursal))),
         }))
 
         if (sucursalId !== undefined) {
@@ -210,7 +222,7 @@ function PanelInicioPage() {
           : dato(SIN_DATOS, 'No se pudieron cargar las funciones.'),
         recaudacionSucursal: dato(CARGANDO),
         funcionesHoy: dato(CARGANDO),
-        salasActivas: dato(SIN_DATOS, SIN_SALAS_NOTA),
+        salasActivas: sucursalesRes.ok ? dato(totalSalas(sucursales)) : dato(SIN_DATOS),
       })
     }
 
@@ -237,7 +249,7 @@ function PanelInicioPage() {
           <p className="text-sm text-base-content/60">Resumen de tu cine</p>
         </header>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${esBranchAdmin ? 'xl:grid-cols-3' : 'xl:grid-cols-4'}`}>
           {stats.map((stat) => (
             <article key={stat.title} className="card card-border border-base-300 bg-base-100 shadow-sm">
               <div className="card-body gap-3">

@@ -3,7 +3,6 @@ import { Link, NavLink, useLocation } from 'react-router'
 import {
   FiAward,
   FiCalendar,
-  FiDollarSign,
   FiFilm,
   FiGlobe,
   FiHome,
@@ -153,7 +152,6 @@ function Navbar() {
               `btn btn-ghost btn-sm font-medium ${isActive ? ACTIVE_CLASS : 'text-gray-300'}`
             }
           >
-            <FiDollarSign className={ICON_CLASS} />
             Ventas
           </NavLink>
 
@@ -235,7 +233,6 @@ function Navbar() {
                 onClick={cerrarTodo}
                 className={({ isActive }) => (isActive ? ACTIVE_CLASS : '')}
               >
-                <FiDollarSign className={ICON_CLASS} />
                 Ventas
               </NavLink>
             </li>

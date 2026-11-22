@@ -206,7 +206,10 @@ function VentasPage() {
         reserva: textoReserva(venta),
         correo: textoCorreo(venta),
         sucursal: textoSucursal(venta),
-        funcion: textoFuncion(primerValor(venta.funcion, venta.funcionDetalle, venta.reserva?.funcion)),
+        funcion:
+          venta.peliculaTitulo === undefined
+            ? textoFuncion(primerValor(venta.funcion, venta.funcionDetalle, venta.reserva?.funcion))
+            : String(venta.peliculaTitulo ?? '').trim() || '—',
         asientos: textoAsientos(primerValor(venta.asientos, venta.reserva?.asientos)),
         total: numeroTotal(venta),
         fecha: fechaVenta(venta),

@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation } from 'react-router'
 import {
   FiAward,
   FiCalendar,
+  FiDollarSign,
   FiFilm,
   FiGlobe,
   FiHome,
@@ -145,6 +146,17 @@ function Navbar() {
             Panel Inicio
           </NavLink>
 
+          <NavLink
+            to="/ventas"
+            end
+            className={({ isActive }) =>
+              `btn btn-ghost btn-sm font-medium ${isActive ? ACTIVE_CLASS : 'text-gray-300'}`
+            }
+          >
+            <FiDollarSign className={ICON_CLASS} />
+            Ventas
+          </NavLink>
+
           {secciones.map((seccion) => {
             const activa = seccion.items.some((item) => location.pathname.startsWith(item.to))
             return (
@@ -214,6 +226,17 @@ function Navbar() {
               >
                 <FiHome className={ICON_CLASS} />
                 Panel Inicio
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/ventas"
+                end
+                onClick={cerrarTodo}
+                className={({ isActive }) => (isActive ? ACTIVE_CLASS : '')}
+              >
+                <FiDollarSign className={ICON_CLASS} />
+                Ventas
               </NavLink>
             </li>
             {secciones.map((seccion) => (

@@ -157,4 +157,9 @@ export const catalogoApi = {
     })
     return handleResponse(res)
   },
+  getVentas: async () => {
+    const auth = await getAuthHeaders()
+    const res = await fetch(`${API_URL}/ventas`, { headers: { ...auth } })
+    return handleResponse(res)
+  },
 }

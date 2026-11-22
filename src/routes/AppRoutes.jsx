@@ -14,6 +14,7 @@ import CrearFuncionPage from '../pages/CrearFuncionPage'
 import GenerosPage from '../pages/GenerosPage'
 import ClasificacionesPage from '../pages/ClasificacionesPage'
 import CiudadesPage from '../pages/CiudadesPage'
+import VentasPage from '../pages/VentasPage'
 import NotFoundPage from '../pages/NotFoundPage'
 import ProtectedRoute from './ProtectedRoute'
 
@@ -29,6 +30,7 @@ function AppRoutes() {
       {/* Rutas protegidas */}
       <Route element={<ProtectedRoute roles={PANEL_ROLES} />}>
         <Route path="/panel-inicio" element={<PanelInicioPage />} />
+        <Route path="/ventas" element={<VentasPage />} />
         <Route path="/panel-inicio/peliculas" element={<PeliculasPage />} />
         <Route path="/panel-inicio/peliculas/crear" element={<CrearPeliculaPage />} />
         <Route path="/panel-inicio/peliculas/:id/editar" element={<EditarPeliculaPage />} />
